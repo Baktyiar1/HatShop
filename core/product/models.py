@@ -1,5 +1,7 @@
+import uuid
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.core.validators import MinValueValidator
 
 User = get_user_model()
 class Category(models.Model):
@@ -7,12 +9,14 @@ class Category(models.Model):
         'Название',
         max_length=150
     )
+
     def __str__(self):
         return self.title
 
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
+
 
 class Banner(models.Model):
     title = models.CharField(
@@ -131,11 +135,14 @@ class Cart(models.Model):
         on_delete=models.PROTECT
     )
     quantity = models.PositiveSmallIntegerField(
-        verbose_name='Кол-во'
+        verbose_name='Кол-во',
+        validators=[MinValueValidator(1)]
     )
-    addres = models.CharField(
+    unique_code = models.CharField(unique=True, max_length=16, blank=True, null=True, help_text='Необязательно')
+
+    address = models.CharField(
         'Адрес',
-        max_length=150
+        max_length=300
     )
     created_date = models.DateTimeField(
         'Дата создания',
@@ -148,10 +155,22 @@ class Cart(models.Model):
     status = models.PositiveSmallIntegerField(
         choices=(
             (1, 'Ожидает подтверждения'),
-            (2, 'Подтвержден')
+            (2, 'Подтвержден'),
+            (3, 'Отказ')
         ),
         default=1
     )
+
+
+    def save(self, *args, **kwargs):
+        # Генерация уникального кода, если он не был установлен
+        if not self.unique_code:
+            self.unique_code = str(uuid.uuid4())[:16]
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'Cart of {self.user} - {self.cap}'
+
 
     class Meta:
         verbose_name = 'Корзина'

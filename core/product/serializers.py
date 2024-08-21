@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from user.models import MyUser
-from .models import Cap, Category, Banner, Image, Brand, Size
+from .models import Cap, Category, Banner, Image, Brand, Size, Cart
 
 
 
@@ -11,11 +10,15 @@ class BannerListSerializer(serializers.ModelSerializer):
         model = Banner
         fields = '__all__'
 
-class BrandListSerializer(serializers.ModelSerializer):
+
+class BrandSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Brand
         fields = '__all__'
+
+
+
 
 class CategoryListSerializer(serializers.ModelSerializer):
 
@@ -23,7 +26,8 @@ class CategoryListSerializer(serializers.ModelSerializer):
         model = Category
         fields = ('title',)
 
-class CapListSerializer(serializers.ModelSerializer):
+
+class CapIndexSerializer(serializers.ModelSerializer):
 
     category = CategoryListSerializer(many=True)
 
@@ -33,9 +37,11 @@ class CapListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'price',
+            'discount_price',
             'category',
             'logo'
         )
+
 
 
 class DiscountListSerializer(serializers.ModelSerializer):
@@ -54,6 +60,28 @@ class DiscountListSerializer(serializers.ModelSerializer):
             'logo',
         )
 
+    def to_representation(self, instance):
+        # Проверяем условие внутри представления данных
+        if instance.discount_price and instance.discount_price < instance.price:
+            return super().to_representation(instance)
+        return None
+
+class CapCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Cap
+        fields = (
+            'title',
+            'description',
+            'logo',
+            'price',
+            'discount_price',
+            'category',
+            'sizes',
+            'images',
+            'brands',
+        )
+
 
 class ImageDetailSerializer(serializers.ModelSerializer):
 
@@ -63,10 +91,6 @@ class ImageDetailSerializer(serializers.ModelSerializer):
                   'image'
                   )
 
-class BrandDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Brand
-        fields = ('title',)
 
 class SizeDetailSerializer(serializers.ModelSerializer):
 
@@ -78,34 +102,67 @@ class CapDetailSerializer(serializers.ModelSerializer):
 
     category = CategoryListSerializer(many=True)
     images = ImageDetailSerializer(many=True)
-    brands = BrandDetailSerializer(many=True)
+    brands = BrandSerializer(many=True)
     sizes = SizeDetailSerializer(many=True)
 
     class Meta:
         model = Cap
-        fields = '__all__'
+        fields = (
+            'category',
+            'sizes',
+            'images',
+            'brands',
+            'title',
+            'description',
+            'logo',
+            'price',
+            'discount_price',
+            'created_date'
+        )
 
-
-class UserProfilSerializer(serializers.ModelSerializer):
+class CapDetailUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = MyUser
+        model = Cap
+        fields = (
+            'title',
+            'description',
+            'logo',
+            'price',
+            'discount_price'
+        )
+
+
+class CapListSerializer(serializers.ModelSerializer):
+
+    category = CategoryListSerializer(many=True)
+    class Meta:
+        model = Cap
         fields = (
             'id',
-            'username',
-            'email',
-            'phone_number',
-            'cover'
+            'title',
+            'price',
+            'discount_price',
+            'category',
+            'logo',
         )
 
-class UserProfilUpdateSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Проверяем, если скидки нет, то удаляем discount_price из данных
+        if not instance.discount_price or instance.discount_price >= instance.price:
+            representation.pop('discount_price', None)
 
+        return representation
+
+class CartCreateSerializer(serializers.ModelSerializer):
+
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     class Meta:
-        model = MyUser
+        model = Cart
         fields = (
-            'username',
-            'email',
-            'phone_number',
-            'cover'
+            'user',
+            'cap',
+            'quantity',
+            'address'
         )
-

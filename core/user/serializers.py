@@ -18,3 +18,25 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class UserProfilSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MyUser
+        fields = (
+            'id',
+            'username',
+            'email',
+            'phone_number',
+            'cover'
+        )
+
+class UserProfilUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MyUser
+        fields = (
+            'username',
+            'email',
+            'phone_number',
+            'cover'
+        )
