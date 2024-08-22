@@ -15,6 +15,7 @@ from .serializers import (
     CapDetailUpdateSerializer, CapCreateSerializer, CartCreateSerializer
 )
 from .filters import CapFilter
+from .pagination import CapPagination
 
 
 class CapIndexViews(APIView):
@@ -131,7 +132,7 @@ class CapListAPIView(generics.ListAPIView):
     filterset_class = CapFilter
     ordering_fields = ['created_date', 'price']
     search_fields = ['title']
-
+    pagination_class = CapPagination
     def get_queryset(self):
 
         queryset = Cap.objects.filter(discount_price__lt=F('price'), is_active=True)
